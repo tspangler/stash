@@ -34,7 +34,7 @@ def encrypt_keyfile(the_key)
   key.encrypt_file('keyfile', 'keyfilee', { :suffix => '.kye' })
 end
 
-print "Key: "
+print "Key? "
 the_key = gets.chomp
 
 if !write_keyfile
