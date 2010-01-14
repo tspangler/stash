@@ -10,7 +10,7 @@ def get_directory_list
   file_list = Array.new
   
   all_dirs.each do |current_dir|
-    if !File.directory?(current_dir) && current_dir != __FILE__ && current_dir != KEYFILE_NAME
+    if !File.directory?(current_dir) && current_dir != __FILE__ && current_dir != KEYFILE_NAME + '.tmp'
       file_list.push(current_dir)
     end
   end
@@ -18,12 +18,8 @@ def get_directory_list
   file_list
 end
 
-def assemble_directory_hash
-
-end
-
 def write_keyfile
-  keyfile = File.new(KEYFILE_NAME, 'w')
+  keyfile = File.new('keyfile.tmp', 'w')
 
   get_directory_list.each do |filename|
     keyfile.puts "#{Digest::SHA1.hexdigest(filename)}|#{filename}"
@@ -39,16 +35,12 @@ end
 
 def encrypt_keyfile(the_key)
   key = EzCrypto::Key.with_password the_key, HASH
-  key.encrypt_file(KEYFILE_NAME)
+  key.encrypt_file('keyfile.tmp', KEYFILE_NAME)
 end
 
 def decrypt_keyfile(the_key)
   key = EzCrypto::Key.with_password the_key, HASH
   key.decrypt_file(KEYFILE_NAME, KEYFILE_NAME + '_dec')
-end
-
-def hash_filename
-  
 end
 
 def restore_filenames
@@ -64,6 +56,9 @@ def restore_filenames
       File.rename(current_line.split('|')[0], current_line.split('|')[1].chomp)
     end
   end
+  
+  # Delete the unencrypted keyfile
+  File.delete(KEYFILE_NAME + '_dec')
   
   return true
 end
@@ -82,8 +77,10 @@ if File.exists?(KEYFILE_NAME)
     puts 'Could not restore filenames.'
   end
 else
-  puts 'Writing keyfile and renaming files...'
+  puts 'Encrypting filenames and writing keyfile...'
   write_keyfile
+  
+  puts 'Encrypting keyfile...'
   encrypt_keyfile(the_key)
 end
 
